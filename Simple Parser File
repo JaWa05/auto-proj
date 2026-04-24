@@ -1,0 +1,26 @@
+def parse_file(filename):
+    path = filename + ".txt"
+    
+    with open(path, "r") as f:
+        content = f.read()
+
+    # Convert to Python-readable format
+    content = content.replace("(", "[").replace(")", "]")
+
+    data = eval(content)   # turns string into nested lists
+
+    nfa_tuple, tests_tuple = data
+
+    sigma, states, start, accept, transitions = nfa_tuple
+
+    nfa = {
+        "sigma": set(sigma),
+        "states": set(states),
+        "start": start,
+        "accept": set(accept),
+        "transitions": [tuple(t) for t in transitions]
+    }
+
+    tests = list(tests_tuple)
+
+    return nfa, tests
