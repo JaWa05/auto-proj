@@ -1,0 +1,193 @@
+#Group Members: Jake Wade, Gabriel Castro, Ziyad Hussein, Mahamudur Daiyan
+
+#PARSER
+
+def parse_file(filename):
+    path = filename + ".txt" #The path includes the ".txt" files for easier use of program.
+    with open(path, "r") as f:
+        content = f.read() #Reads the entire file into one string for character parsing.
+
+
+    pos = [0] 
+    #the position index is in the form of a list so nested functions can make modifications.
+
+    def skip_ws(): #This function allows the position index to advance past any white spaces including tabs and new lines.
+        while pos[0] < len(content) and content[pos[0]].isspace():
+            pos[0] += 1
+
+    def peek(): #This function looks at a character without consuming the character. 
+        skip_ws()
+        if pos[0] >= len(content):
+            return None
+        return content[pos[0]]
+
+    def consume(): #This function skips the white spaces while also reading and moving on to the next character.
+        #Is called when we know the character to be expected next and we need to move forward.
+        skip_ws()
+        ch = content[pos[0]]
+        pos[0] += 1
+        return ch
+
+    def expect(ch): #This function consumes the character and prevents wrong results from being produced.
+        #any grammatical issues with the text files will be checked here.
+        got = consume()
+        if got != ch:
+            raise ValueError(f"Parse error: expected '{ch}' but got '{got}' at pos {pos[0]}")
+
+    def read_token():
+        #This function reads the alphanumerical characters which identifies the state names.
+        skip_ws()
+        start = pos[0]
+        while pos[0] < len(content) and content[pos[0]].isalnum():  #while characters are alphanumeric function will advance.
+            pos[0] += 1
+        token = content[start:pos[0]]       #extracts/slices the token from the content string.
+        if not token:
+            raise ValueError(f"Parse error: expected token at pos {pos[0]}")
+        return token
+
+    def parse_tuple_of_tokens():
+        #A tuple is parsed (q0, q1, q2, etc.) and a Python list of strings are returned.
+        #used for Sigma, set of states K, and set of accept states F.
+        expect('(')     #The tuple starts with '('
+        items = []
+        while peek() != ')':    #keeps reading items from the tuple until ')'
+            items.append(read_token())
+            if peek() == ',':   #items separated by commas are consumed.
+                consume()
+        expect(')')
+        return items
+
+    def parse_start_state():    #This function identifies the start state (q0) in the NFA tuple.
+        return read_token()
+
+    def parse_transitions():    #This function parses the transition relation which is a tuple of triples.
+        #e.g. ((q0,0,q0), (q0,1,q0), etc.)
+        expect('(')
+        triples = []    #Each triple consists of (from_state, symbol, to_state)
+        while peek() != ')':    
+            expect('(')
+            frm = read_token()      #from_state: start of the transition.
+            expect(',')
+            sym = read_token()      #symbol: the input character that triggers the transition.
+            expect(',')
+            to  = read_token()      #to_state: where the transition leads.
+            expect(')')
+            triples.append((frm, sym, to))  #Because an NFA can have multiple transitions from the same state on the same symbol (nondeterminism)
+            #The dictionary cannot just be (state, symbol) as it would produce and overwite duplicates.
+            if peek() == ',':
+                consume()
+        expect(')')
+        return triples
+
+    def parse_nfa():
+        #NFA: (sigma, states, start, accept, transitions)
+        #Returned as a python dictionary to indicate (nfa["start", nfa["accept"], etc.)
+        expect('(')
+
+        sigma       = parse_tuple_of_tokens();  expect(',')
+        states      = parse_tuple_of_tokens();  expect(',')
+        start       = parse_start_state();      expect(',')
+        accept      = parse_tuple_of_tokens();  expect(',')
+        transitions = parse_transitions()
+
+        expect(')')
+
+        #Validates that the start state and accept states are in K.
+        #Allows potential errors to be clear early in the computation.
+        if start not in states:
+            raise ValueError(f"Start state '{start}' not in states list")
+        for a in accept:
+            if a not in states:
+                raise ValueError(f"Accept state '{a}' not in states list")
+
+        return {
+            "sigma":       set(sigma),
+            "states":      set(states),
+            "start":       start,
+            "accept":      set(accept),
+            "transitions": transitions  # list of (from_state, symbol, to_state)
+        }
+
+    def parse_test_strings(): #parse the second element of the outer tuple.
+        #a list of strings will be returned while an empty string indicates the interactive mode.
+        return parse_tuple_of_tokens()
+
+    #Top-level: (NFA , tests)
+    expect('(')
+    nfa     = parse_nfa(); 
+    expect(',')  
+
+    tests   = parse_test_strings()
+    expect(')')
+
+    return nfa, tests
+
+
+#NFA SIMULATOR (stack-based)
+
+def simulate(nfa, input_string):
+    stack = [(nfa["start"], input_string)]      #The stack is started with the initial config. at start state.
+    #A stack (depth-first search) is used because accepting paths are found faster while a queue would explore all other options.
+    while stack: 
+        state, remaining = stack.pop()      
+
+        #Base case: all inputs have been consumed. 
+        #check if current state is an accepting state.
+        if remaining == "":
+            if state in nfa["accept"]:
+                return True
+            else:
+                continue 
+
+        #Recursive case: Input still left to read.
+        symbol = remaining[0]
+        rest   = remaining[1:]
+
+        # Finds all transitions out of the current state on this symbol.
+        # Nondeterminism is handled here, whether there is 0, one, or multiple matches. 
+        for (frm, sym, to) in nfa["transitions"]:
+            if frm == state and sym == symbol:      #This transition applies to the current state and symbol.
+                stack.append((to, rest))            #Pushes the new config. for exploration.
+
+    return False  #If the stack is not true that indicates every possible computation path was explored and none were accepted.
+
+
+#MAIN
+
+def main():
+    filename = input("Please input the file name: ").strip()
+
+    try:
+        nfa, tests = parse_file(filename)       #Attempts to open and parse file
+    except FileNotFoundError:
+        print(f"Error: '{filename}.txt' not found.")
+        return
+    except ValueError as e:
+        print(e)
+        return
+
+    if tests: #Test strings provided in the file.
+        results = []
+        for s in tests:
+            results.append("accepted" if simulate(nfa, s) else "rejected") #all results printed in one tuple (accepted/rejected)
+        print("(" + ", ".join(results) + ")")
+
+    else:
+        #Test strings for interactive mode.
+        #promts the user to input strings for test. empty string indicates an exit from the program.
+        first = True
+        while True:
+            prompt = "Please input a string: " if first else "Please input another string: "
+            first  = False
+            s = input(prompt).strip()
+            if s == "":
+                print("Bye bye.")
+                break
+            if simulate(nfa, s):
+                print("Accepted.")
+            else:
+                print("Rejected.")
+
+
+if __name__ == "__main__":
+    main()
