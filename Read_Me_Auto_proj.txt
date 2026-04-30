@@ -11,11 +11,11 @@ How to compile/run project in Windows:
 
 
 FILES INCLUDED:
-- runNFA.py           (The core simulator and parser)
+- NFA_Simulator.py           (The core simulator and parser)
 - Report.pdf          (Detailed logic and data structure specs)
 - readme.txt          (This instruction file)
 
-Make sure project-1-machine-1.txt is in the same directory as runNFA.py project.
+Make sure project-1-machine-1.txt is in the same directory as NFA_Simulator.py project.
 In the terminal the program will ask you to input the project-1-machine.txt file, once typed in the terminal, program will ask for a string input.
 String must end with 01 to be 'accepted', any combination of strings that doesn't end in 01 will say 'rejected'.
 eventually user must input an empty string(enter key), and the program will terminate with "bye bye".
@@ -25,11 +25,11 @@ SOFTWARE REQUIREMENTS:
 - No external libraries or "pip install" commands are required.
 
 HOW TO RUN:
-NOTE: If the python command isn't recognized, try using py runNFA.py or ensure Python is added to your system PATH.
+NOTE: If the python command isn't recognized, try using py NFA_Simulator.py or ensure Python is added to your system PATH.
 1. Open your terminal or command prompt.
-2. Navigate to the folder containing 'runNFA.py'.
+2. Navigate to the folder containing 'NFA_Simulator.py'.
 3. Execute the program using:
-   python runNFA.py
+   python NFA_Simulator.py
    
 4. INPUT FILENAME: The program will prompt: "Please input the file name:".
    - Enter only the name of the file (e.g., proj-1-machine-1).
