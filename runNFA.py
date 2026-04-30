@@ -22,30 +22,33 @@ def parse_file(filename):
         nfa   -- dict with keys: sigma, states, start, accept, transitions
         tests -- list of test strings (empty list = interactive mode)
     """
-    path = filename + ".txt"
+    path = filename + ".txt" #The path includes the ".txt" files for easier use of program.
     with open(path, "r") as f:
-        content = f.read()
+        content = f.read() #Reads the entire file into one string for character parsing.
 
-    # Use a mutable index wrapped in a list so inner functions can modify it
-    pos = [0]
 
-    def skip_ws():
+    pos = [0] 
+    #the position index is in the form of a list so nested functions can make modifications.
+
+    def skip_ws(): #This function allows the position index to advance past any white spaces including tabs and new lines.
         while pos[0] < len(content) and content[pos[0]].isspace():
             pos[0] += 1
 
-    def peek():
+    def peek(): #This function looks at a character without consuming the character. 
         skip_ws()
         if pos[0] >= len(content):
             return None
         return content[pos[0]]
 
-    def consume():
+    def consume(): #This function skips the white spaces while also reading and moving on to the next character.
+        #Is called when we know the character to be expected next and we need to move forward.
         skip_ws()
         ch = content[pos[0]]
         pos[0] += 1
         return ch
 
-    def expect(ch):
+    def expect(ch): #This function consumes the character and prevents wrong results from being produced.
+        #any grammatical issues with the text files will be checked here.
         got = consume()
         if got != ch:
             raise ValueError(f"Parse error: expected '{ch}' but got '{got}' at pos {pos[0]}")
