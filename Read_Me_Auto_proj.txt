@@ -15,7 +15,7 @@ FILES INCLUDED:
 - Report.pdf          (Detailed logic and data structure specs)
 - readme.txt          (This instruction file)
 
-Make sure project-1-machine-1.txt is in the same directory as NFA_simulator.py project.
+Make sure project-1-machine-1.txt is in the same directory as runNFA.py project.
 In the terminal the program will ask you to input the project-1-machine.txt file, once typed in the terminal, program will ask for a string input.
 String must end with 01 to be 'accepted', any combination of strings that doesn't end in 01 will say 'rejected'.
 eventually user must input an empty string(enter key), and the program will terminate with "bye bye".
